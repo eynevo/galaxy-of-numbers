@@ -67,7 +67,14 @@ body {
 }
 
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+}
+
+/* Extra padding for PWA standalone mode to clear home indicator */
+@media all and (display-mode: standalone) {
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 34px);
+  }
 }
 
 /* Touch-friendly button base */
