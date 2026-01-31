@@ -28,8 +28,8 @@ class GalaxyDatabase extends Dexie {
   constructor() {
     super('GalaxyOfNumbers');
 
-    this.version(1).stores({
-      profiles: 'id, name, createdAt',
+    this.version(2).stores({
+      profiles: 'id, name, createdAt, lastActiveAt',
       tableProgress: '[profileId+tableNumber], profileId, status',
       factStats: '[profileId+fact], profileId, nextReviewDate',
       quizAttempts: 'id, profileId, tableNumber, date',
@@ -48,19 +48,46 @@ export const db = new GalaxyDatabase();
 // Helper functions for common database operations
 
 export async function getProfile(id: string): Promise<Profile | undefined> {
-  return db.profiles.get(id);
+  try {
+    return await db.profiles.get(id);
+  } catch (error) {
+    console.error('getProfile error:', error);
+    throw error;
+  }
 }
 
 export async function getAllProfiles(): Promise<Profile[]> {
-  return db.profiles.orderBy('lastActiveAt').reverse().toArray();
+  try {
+    const profiles = await db.profiles.toArray();
+    // Sort in memory to avoid index issues
+    return profiles.sort((a, b) => 
+      new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+    );
+  } catch (error) {
+    console.error('getAllProfiles error:', error);
+    throw error;
+  }
 }
 
 export async function createProfile(profile: Profile): Promise<string> {
-  return db.profiles.add(profile);
+  try {
+    console.log('Creating profile:', profile);
+    const result = await db.profiles.add(profile);
+    console.log('Profile created with id:', result);
+    return result;
+  } catch (error) {
+    console.error('createProfile error:', error);
+    throw error;
+  }
 }
 
 export async function updateProfile(id: string, updates: Partial<Profile>): Promise<void> {
-  await db.profiles.update(id, updates);
+  try {
+    await db.profiles.update(id, updates);
+  } catch (error) {
+    console.error('updateProfile error:', error);
+    throw error;
+  }
 }
 
 export async function deleteProfile(id: string): Promise<void> {
@@ -172,58 +199,79 @@ export async function saveQuizAttempt(attempt: QuizAttempt): Promise<void> {
 }
 
 export async function getQuizAttempts(profileId: string, tableNumber?: number): Promise<QuizAttempt[]> {
-  let query = db.quizAttempts.where('profileId').equals(profileId);
   if (tableNumber !== undefined) {
     return db.quizAttempts
-      .where('[profileId+tableNumber]')
-      .equals([profileId, tableNumber])
+      .where('profileId')
+      .equals(profileId)
+      .filter(a => a.tableNumber === tableNumber)
       .toArray();
   }
-  return query.toArray();
+  return db.quizAttempts.where('profileId').equals(profileId).toArray();
 }
 
 // Initialize default settings if none exist
 export async function initializeSettings(): Promise<void> {
-  const settings = await getSettings();
-  if (!settings) {
-    await db.settings.add({
-      parentPin: '1234', // Default PIN
-      breakReminderMinutes: 20,
-      soundEnabled: true,
-    });
+  try {
+    const settings = await getSettings();
+    if (!settings) {
+      await db.settings.add({
+        parentPin: '1234', // Default PIN
+        breakReminderMinutes: 20,
+        soundEnabled: true,
+      });
+    }
+  } catch (error) {
+    console.error('initializeSettings error:', error);
   }
 }
 
 // Initialize progress for a new profile
 export async function initializeProfileProgress(profileId: string): Promise<void> {
-  // Table unlock order: 1, 10, 2, 5, 3, 4, 9, 6, 7, 8
-  const unlockOrder = [1, 10, 2, 5, 3, 4, 9, 6, 7, 8];
+  try {
+    // Table unlock order: 1, 10, 2, 5, 3, 4, 9, 6, 7, 8
+    const unlockOrder = [1, 10, 2, 5, 3, 4, 9, 6, 7, 8];
 
-  for (let i = 0; i < unlockOrder.length; i++) {
-    const tableNumber = unlockOrder[i];
-    await db.tableProgress.put({
+    for (let i = 0; i < unlockOrder.length; i++) {
+      const tableNumber = unlockOrder[i];
+      await db.tableProgress.put({
+        profileId,
+        tableNumber,
+        status: i === 0 ? 'learning' : 'locked', // First table is unlocked
+        teachingCompleted: false,
+        guidedPracticeCompleted: false,
+        masteryScore: 0,
+        lastPracticedAt: null,
+      });
+    }
+
+    // Initialize star balance
+    await db.starBalances.put({
       profileId,
-      tableNumber,
-      status: i === 0 ? 'learning' : 'locked', // First table is unlocked
-      teachingCompleted: false,
-      guidedPracticeCompleted: false,
-      masteryScore: 0,
-      lastPracticedAt: null,
+      totalStars: 0,
+      lifetimeStars: 0,
     });
+
+    // Initialize streak
+    await db.streaks.put({
+      profileId,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastPracticeDate: null,
+    });
+
+    console.log('Profile progress initialized for:', profileId);
+  } catch (error) {
+    console.error('initializeProfileProgress error:', error);
+    throw error;
   }
+}
 
-  // Initialize star balance
-  await db.starBalances.put({
-    profileId,
-    totalStars: 0,
-    lifetimeStars: 0,
-  });
+// Get assessment result
+export async function getAssessmentResult(profileId: string): Promise<AssessmentResult | undefined> {
+  return db.assessments.get(profileId);
+}
 
-  // Initialize streak
-  await db.streaks.put({
-    profileId,
-    currentStreak: 0,
-    longestStreak: 0,
-    lastPracticeDate: '',
-  });
+// Save assessment result
+export async function saveAssessmentResult(result: AssessmentResult): Promise<void> {
+  await db.assessments.put(result);
 }

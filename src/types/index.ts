@@ -73,7 +73,7 @@ export interface Streak {
   profileId: string;
   currentStreak: number;
   longestStreak: number;
-  lastPracticeDate: string; // YYYY-MM-DD format
+  lastPracticeDate: string | null; // YYYY-MM-DD format, null if never practiced
 }
 
 // Character/Collectible types
