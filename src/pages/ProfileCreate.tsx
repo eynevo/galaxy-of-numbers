@@ -19,6 +19,7 @@ export function ProfileCreate() {
   const [avatarId, setAvatarId] = useState('');
   const [inputMethod, setInputMethod] = useState<InputMethod>('multiple-choice');
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleNext = () => {
     if (step === 'name' && name.trim()) {
@@ -44,11 +45,16 @@ export function ProfileCreate() {
     if (!name.trim() || !avatarId) return;
 
     setIsCreating(true);
+    setError(null);
     try {
-      await addProfile(name.trim(), theme, avatarId, inputMethod);
+      console.log('Creating profile...', { name: name.trim(), theme, avatarId, inputMethod });
+      const profile = await addProfile(name.trim(), theme, avatarId, inputMethod);
+      console.log('Profile created:', profile);
       navigate('/profiles', { replace: true });
-    } catch (error) {
-      console.error('Failed to create profile:', error);
+    } catch (err) {
+      console.error('Failed to create profile:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError('Failed to create profile: ' + errorMessage);
       setIsCreating(false);
     }
   };
@@ -218,6 +224,12 @@ export function ProfileCreate() {
                 </span>
               </motion.button>
             </div>
+
+            {error && (
+              <div className="w-full max-w-sm p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm">
+                {error}
+              </div>
+            )}
 
             <Button onClick={handleCreate} disabled={isCreating} size="lg">
               {isCreating ? 'Creating...' : '🚀 Start Adventure!'}
