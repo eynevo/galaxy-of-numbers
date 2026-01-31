@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/* Theme CSS Variables */
+:root {
+  /* Common variables */
+  --color-background: #0f0f23;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-star: #ffd700;
+  --color-success: #4ade80;
+  --color-error: #f87171;
+
+  /* Default (Sparkle theme) */
+  --color-primary: #ec4899;
+  --color-primary-light: #f9a8d4;
+  --color-secondary: #a855f7;
+  --color-secondary-light: #d8b4fe;
+  --color-accent: #f0abfc;
+  --color-surface: rgba(236, 72, 153, 0.1);
+  --color-surface-elevated: rgba(168, 85, 247, 0.15);
+}
+
+/* Lego theme */
+[data-theme="lego"] {
+  --color-primary: #dc2626;
+  --color-primary-light: #fca5a5;
+  --color-secondary: #2563eb;
+  --color-secondary-light: #93c5fd;
+  --color-accent: #facc15;
+  --color-surface: rgba(220, 38, 38, 0.1);
+  --color-surface-elevated: rgba(37, 99, 235, 0.15);
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Safe area padding for notched devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Touch-friendly button base */
+button, .touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Custom animations */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary); }
+  50% { box-shadow: 0 0 20px var(--color-primary), 0 0 30px var(--color-primary); }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Star background effect */
+.stars-bg {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(2px 2px at 130px 80px, #fff, transparent),
+    radial-gradient(1px 1px at 160px 120px, #fff, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
