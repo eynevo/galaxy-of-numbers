@@ -79,17 +79,17 @@ export function Learning() {
   const renderConceptStep = (step: TeachingStep) => (
     <motion.div
       key={stepIndex}
-      className="flex flex-col items-center gap-6 text-center"
+      className="flex flex-col items-center gap-3 text-center"
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
     >
       {step.type === 'visual' && step.example && (
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-2 max-w-xs">
           {Array.from({ length: step.example.multiplicand }).map((_, groupIndex) => (
             <motion.div
               key={groupIndex}
-              className="p-4 rounded-xl bg-white/10 flex flex-wrap gap-2 justify-center"
+              className="p-2 rounded-lg bg-white/10 flex flex-wrap gap-1 justify-center max-w-[70px]"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: groupIndex * 0.2 }}
@@ -97,7 +97,7 @@ export function Learning() {
               {Array.from({ length: step.example!.multiplier }).map((_, itemIndex) => (
                 <motion.span
                   key={itemIndex}
-                  className="text-2xl"
+                  className="text-base"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: groupIndex * 0.2 + itemIndex * 0.1 }}
@@ -110,26 +110,26 @@ export function Learning() {
         </div>
       )}
 
-      <p className="text-lg text-white leading-relaxed">{step.content}</p>
+      <p className="text-sm text-white leading-relaxed">{step.content}</p>
     </motion.div>
   );
 
   const renderPattern = (pattern: PatternTeaching) => (
     <motion.div
       key={stepIndex}
-      className="flex flex-col items-center gap-6"
+      className="flex flex-col items-center gap-3"
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
     >
-      <h3 className="text-2xl font-bold text-[var(--color-primary)]">{pattern.title}</h3>
-      <p className="text-lg text-white text-center">{pattern.description}</p>
+      <h3 className="text-xl font-bold text-[var(--color-primary)]">{pattern.title}</h3>
+      <p className="text-sm text-white text-center">{pattern.description}</p>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {pattern.examples.map((example, i) => (
           <motion.div
             key={i}
-            className="px-6 py-3 rounded-xl bg-white/10 text-xl font-mono text-[var(--color-accent)]"
+            className="px-3 py-2 rounded-lg bg-white/10 text-base font-mono text-[var(--color-accent)]"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.2 }}
@@ -141,7 +141,7 @@ export function Learning() {
 
       {pattern.tip && (
         <motion.div
-          className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-primary)]/30"
+          className="p-3 rounded-lg bg-[var(--color-surface)] max-w-sm border border-[var(--color-primary)]/30"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -160,7 +160,7 @@ export function Learning() {
     return (
       <motion.div
         key={practiceIndex}
-        className="flex flex-col items-center gap-6"
+        className="flex flex-col items-center gap-3"
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -50 }}
@@ -169,7 +169,7 @@ export function Learning() {
           Practice {practiceIndex + 1} of {teaching.guidedPractice.length}
         </h3>
 
-        <div className="text-5xl font-bold text-white">
+        <div className="text-4xl font-bold text-white">
           {problem.multiplicand} × {problem.multiplier} = ?
         </div>
 
@@ -180,7 +180,7 @@ export function Learning() {
               inputMode="numeric"
               value={userAnswer}
               onChange={e => setUserAnswer(e.target.value.replace(/\D/g, ''))}
-              className="w-32 h-20 text-4xl text-center font-bold bg-white/10 border-2 border-white/20 rounded-2xl text-white focus:outline-none focus:border-[var(--color-primary)]"
+              className="w-24 h-14 text-3xl text-center font-bold bg-white/10 border-2 border-white/20 rounded-2xl text-white focus:outline-none focus:border-[var(--color-primary)]"
               autoFocus
             />
 
@@ -215,8 +215,8 @@ export function Learning() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            <div className="text-4xl mb-2">{isCorrect ? '✨' : '🤔'}</div>
-            <p className="text-xl font-bold text-white mb-2">
+            <div className="text-3xl mb-1">{isCorrect ? '✨' : '🤔'}</div>
+            <p className="text-lg font-bold text-white">
               {isCorrect ? 'Great job!' : `The answer is ${correctAnswer}`}
             </p>
             <p className="text-[var(--color-text-secondary)]">{problem.explanation}</p>
@@ -228,24 +228,24 @@ export function Learning() {
 
   const renderReady = () => (
     <motion.div
-      className="flex flex-col items-center gap-8 text-center"
+      className="flex flex-col items-center gap-4 text-center"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
     >
       <motion.div
-        className="text-8xl"
+        className="text-6xl"
         animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
         transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
       >
         🚀
       </motion.div>
 
-      <h2 className="text-3xl font-bold text-white">You're Ready!</h2>
+      <h2 className="text-2xl font-bold text-white">You're Ready!</h2>
       <p className="text-lg text-[var(--color-text-secondary)]">
         Time to show what you've learned about the {tableNumber}s table!
       </p>
 
-      <Button size="lg" onClick={handleStartQuiz}>
+      <Button onClick={handleStartQuiz}>
         Start Quiz! ⭐
       </Button>
     </motion.div>
@@ -258,9 +258,9 @@ export function Learning() {
         onBack={() => navigate('/adventure')}
       />
 
-      <PageContent center className="gap-6">
+      <PageContent center className="gap-3 overflow-hidden">
         {/* Progress indicator */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full max-w-xs">
           {(['concept', 'patterns', 'practice', 'ready'] as LearningPhase[]).map(p => (
             <div
               key={p}
@@ -287,7 +287,7 @@ export function Learning() {
 
         {/* Navigation */}
         {(phase === 'concept' || phase === 'patterns') && (
-          <Button size="lg" onClick={handleNextStep}>
+          <Button onClick={handleNextStep}>
             Next →
           </Button>
         )}

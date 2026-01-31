@@ -12,6 +12,7 @@ import { Quiz } from './pages/Quiz';
 import { Results } from './pages/Results';
 import { PinEntry } from './pages/parent/PinEntry';
 import { ParentDashboard } from './pages/parent/Dashboard';
+import { ParentSettings } from './pages/parent/Settings';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           {/* Parent section */}
           <Route path="/parent/pin" element={<PinEntry />} />
           <Route path="/parent/dashboard" element={<ParentDashboard />} />
+          <Route path="/parent/settings" element={<ParentSettings />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
