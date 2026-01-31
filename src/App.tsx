@@ -15,7 +15,7 @@ import { ParentDashboard } from './pages/parent/Dashboard';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/galaxy-of-numbers">
       <ThemeProvider>
         <Routes>
           {/* Splash and onboarding */}
