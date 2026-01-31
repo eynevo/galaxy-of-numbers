@@ -52,7 +52,7 @@ export function MainMenu() {
 
   return (
     <PageContainer>
-      <PageContent className="gap-6">
+      <PageContent className="gap-3 overflow-hidden">
         {/* Profile Header */}
         <motion.div
           className="flex items-center justify-between"
@@ -87,25 +87,25 @@ export function MainMenu() {
 
         {/* Welcome message */}
         <motion.div
-          className="text-center py-4"
+          className="text-center py-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-2xl font-bold text-white mb-1">
+          <h1 className="text-xl font-bold text-white">
             Welcome back, {currentProfile.name}!
           </h1>
           <p className="text-[var(--color-text-secondary)]">Ready for your space mission?</p>
         </motion.div>
 
         {/* Menu Items */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-3 min-h-0">
           {menuItems.map((item, index) => (
             <motion.button
               key={item.id}
               className={`
                 relative overflow-hidden
-                flex items-center gap-4 p-6
+                flex items-center gap-3 p-4
                 rounded-2xl bg-gradient-to-r ${item.color}
                 text-left
               `}
@@ -115,7 +115,7 @@ export function MainMenu() {
               transition={{ delay: 0.1 + index * 0.1 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span className="text-4xl">{item.emoji}</span>
+              <span className="text-3xl">{item.emoji}</span>
               <div>
                 <h3 className="text-xl font-bold text-white">{item.title}</h3>
                 <p className="text-white/80 text-sm">{item.subtitle}</p>

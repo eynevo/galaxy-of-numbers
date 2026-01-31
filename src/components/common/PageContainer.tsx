@@ -12,7 +12,8 @@ export function PageContainer({ children, className = '', showStars = true }: Pa
     <motion.div
       className={`
         flex-1 flex flex-col
-        min-h-screen min-h-[100dvh]
+        h-screen h-[100dvh] max-h-screen max-h-[100dvh]
+        overflow-hidden
         safe-area-top safe-area-bottom
         ${showStars ? 'stars-bg' : ''}
         ${className}
@@ -73,7 +74,7 @@ export function PageContent({ children, className = '', center = false }: PageCo
   const centerStyles = center ? 'items-center justify-center' : '';
 
   return (
-    <main className={`flex-1 flex flex-col p-4 ${centerStyles} ${className}`}>
+    <main className={`flex-1 flex flex-col p-4 min-h-0 ${centerStyles} ${className}`}>
       {children}
     </main>
   );
