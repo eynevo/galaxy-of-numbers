@@ -1,21 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageContainer, PageContent } from '../components/common/PageContainer';
 import { Button } from '../components/common/Button';
 import { StarBurst } from '../components/common/StarDisplay';
+import { StreakCelebration } from '../components/common/StreakCelebration';
 import { useProfileStore } from '../stores/profileStore';
 import { useProgressStore } from '../stores/progressStore';
+import { useAudio } from '../hooks/useAudio';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import type { QuizAttempt } from '../types';
 
 export function Results() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentProfile = useProfileStore(state => state.currentProfile);
-  const { addStars, starBalance } = useProgressStore();
+  const { addStars, starBalance, lastMilestoneReached, clearMilestone } = useProgressStore();
+  const { play } = useAudio();
+  const { speak } = useTextToSpeech();
 
   const [showStarBurst, setShowStarBurst] = useState(true);
   const [starsEarned, setStarsEarned] = useState(0);
+  const soundPlayed = useRef(false);
 
   const attempt = location.state?.attempt as QuizAttempt | undefined;
 
@@ -33,9 +39,34 @@ export function Results() {
     setStarsEarned(totalStars);
     addStars(currentProfile.id, totalStars);
 
+    // Play celebration sound once
+    if (!soundPlayed.current) {
+      soundPlayed.current = true;
+      const percentage = Math.round((attempt.correctAnswers / attempt.totalProblems) * 100);
+      if (percentage >= 90) {
+        play('complete');
+      } else {
+        play('star');
+      }
+    }
+
     // Hide star burst after animation
     setTimeout(() => setShowStarBurst(false), 2000);
-  }, [currentProfile, attempt, navigate, addStars]);
+
+    // Speak the result after a short delay
+    const percentage = Math.round((attempt.correctAnswers / attempt.totalProblems) * 100);
+    setTimeout(() => {
+      if (percentage === 100) {
+        speak(`Perfect score! You got all ${attempt.totalProblems} questions right! You earned ${totalStars} stars!`);
+      } else if (percentage >= 90) {
+        speak(`Excellent! You got ${attempt.correctAnswers} out of ${attempt.totalProblems} right. You earned ${totalStars} stars!`);
+      } else if (percentage >= 70) {
+        speak(`Great job! You got ${attempt.correctAnswers} out of ${attempt.totalProblems} right. Keep practicing!`);
+      } else {
+        speak(`Good effort! You got ${attempt.correctAnswers} out of ${attempt.totalProblems} right. Practice makes perfect!`);
+      }
+    }, 500);
+  }, [currentProfile, attempt, navigate, addStars, play, speak]);
 
   if (!currentProfile || !attempt) return null;
 
@@ -53,9 +84,20 @@ export function Results() {
 
   const message = getMessage();
 
+  // Play streak sound when milestone is reached
+  useEffect(() => {
+    if (lastMilestoneReached) {
+      play('streak');
+    }
+  }, [lastMilestoneReached, play]);
+
   return (
     <PageContainer>
       {showStarBurst && <StarBurst count={starsEarned} />}
+      <StreakCelebration
+        milestone={lastMilestoneReached}
+        onDismiss={clearMilestone}
+      />
 
       <PageContent center className="gap-8">
         {/* Result emoji and message */}

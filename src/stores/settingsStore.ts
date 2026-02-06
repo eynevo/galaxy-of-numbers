@@ -15,6 +15,7 @@ interface SettingsState {
   updatePin: (newPin: string) => Promise<void>;
   updateBreakReminder: (minutes: number) => Promise<void>;
   toggleSound: () => Promise<void>;
+  toggleReadAloud: () => Promise<void>;
   startSession: () => void;
   getSessionDuration: () => number;
   shouldShowBreakReminder: () => boolean;
@@ -73,6 +74,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const { settings } = get();
     if (settings) {
       const updated = { ...settings, soundEnabled: !settings.soundEnabled };
+      await updateSettings(updated);
+      set({ settings: updated });
+    }
+  },
+
+  toggleReadAloud: async () => {
+    const { settings } = get();
+    if (settings) {
+      const updated = { ...settings, readAloudEnabled: !settings.readAloudEnabled };
       await updateSettings(updated);
       set({ settings: updated });
     }

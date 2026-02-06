@@ -5,6 +5,7 @@ import { PageContainer, PageHeader, PageContent } from '../components/common/Pag
 import { Button } from '../components/common/Button';
 import { useProfileStore } from '../stores/profileStore';
 import { useProgressStore } from '../stores/progressStore';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { getTableTeaching } from '../data/tables';
 import type { TeachingStep, PatternTeaching, GuidedProblem } from '../types';
 
@@ -17,6 +18,7 @@ export function Learning() {
 
   const currentProfile = useProfileStore(state => state.currentProfile);
   const { completeTeaching, completeGuidedPractice } = useProgressStore();
+  const { speak, stop } = useTextToSpeech();
 
   const [phase, setPhase] = useState<LearningPhase>('concept');
   const [stepIndex, setStepIndex] = useState(0);
@@ -32,6 +34,53 @@ export function Learning() {
       navigate('/adventure', { replace: true });
     }
   }, [currentProfile, teaching, navigate]);
+
+  // Speak content when phase or step changes
+  useEffect(() => {
+    if (!teaching) return;
+
+    const timer = setTimeout(() => {
+      if (phase === 'concept' && teaching.conceptIntro[stepIndex]) {
+        speak(teaching.conceptIntro[stepIndex].content);
+      } else if (phase === 'patterns' && teaching.patterns[stepIndex]) {
+        const pattern = teaching.patterns[stepIndex];
+        const text = `${pattern.title}. ${pattern.description}${pattern.tip ? `. Tip: ${pattern.tip}` : ''}`;
+        speak(text);
+      } else if (phase === 'ready') {
+        speak(`You're ready! Time to show what you've learned about the ${tableNumber}s table!`);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [phase, stepIndex, teaching, tableNumber, speak, stop]);
+
+  // Speak hint when shown
+  useEffect(() => {
+    if (showHint && teaching && phase === 'practice') {
+      const problem = teaching.guidedPractice[practiceIndex];
+      if (problem) {
+        speak(problem.hint);
+      }
+    }
+  }, [showHint, teaching, phase, practiceIndex, speak]);
+
+  // Speak result feedback
+  useEffect(() => {
+    if (showResult && teaching && phase === 'practice') {
+      const problem = teaching.guidedPractice[practiceIndex];
+      const correctAnswer = problem.multiplicand * problem.multiplier;
+      const isCorrect = parseInt(userAnswer) === correctAnswer;
+
+      if (isCorrect) {
+        speak(`Great job! ${problem.explanation}`);
+      } else {
+        speak(`The answer is ${correctAnswer}. ${problem.explanation}`);
+      }
+    }
+  }, [showResult, teaching, phase, practiceIndex, userAnswer, speak]);
 
   if (!currentProfile || !teaching) return null;
 

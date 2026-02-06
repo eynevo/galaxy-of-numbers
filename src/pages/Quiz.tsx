@@ -5,54 +5,16 @@ import { PageContainer, PageContent } from '../components/common/PageContainer';
 import { Button } from '../components/common/Button';
 import { useProfileStore } from '../stores/profileStore';
 import { useProgressStore } from '../stores/progressStore';
-import type { QuizProblem, QuizAttempt } from '../types';
+import { useAudio } from '../hooks/useAudio';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import {
+  generateProblems as generateMathProblems,
+  generateWrongAnswers as generateMathWrongAnswers,
+  getOperationSymbol,
+} from '../utils/problemGenerator';
+import type { QuizProblem, QuizAttempt, MathProblem, OperationType, DifficultyLevel } from '../types';
 
 const QUIZ_SIZE = 10;
-
-function generateProblems(tableNumber: number): QuizProblem[] {
-  const problems: QuizProblem[] = [];
-  const usedPairs = new Set<string>();
-
-  // Generate problems for the table
-  while (problems.length < QUIZ_SIZE) {
-    const multiplier = Math.floor(Math.random() * 10) + 1;
-    const pairKey = `${tableNumber}x${multiplier}`;
-
-    // Also include reverse (commutative property practice)
-    const shouldReverse = Math.random() > 0.5;
-    const multiplicand = shouldReverse ? multiplier : tableNumber;
-    const actualMultiplier = shouldReverse ? tableNumber : multiplier;
-
-    if (!usedPairs.has(pairKey) || problems.length >= 5) {
-      usedPairs.add(pairKey);
-      problems.push({
-        multiplicand,
-        multiplier: actualMultiplier,
-        correctAnswer: multiplicand * actualMultiplier,
-        userAnswer: null,
-        isCorrect: false,
-        timeToAnswerMs: 0,
-      });
-    }
-  }
-
-  return problems;
-}
-
-function generateWrongAnswers(correct: number): number[] {
-  const wrongs = new Set<number>();
-
-  // Add some close wrong answers
-  while (wrongs.size < 3) {
-    const offset = Math.floor(Math.random() * 20) - 10;
-    const wrong = correct + offset;
-    if (wrong !== correct && wrong > 0 && wrong <= 100) {
-      wrongs.add(wrong);
-    }
-  }
-
-  return Array.from(wrongs);
-}
 
 export function Quiz() {
   const navigate = useNavigate();
@@ -61,8 +23,10 @@ export function Quiz() {
 
   const currentProfile = useProfileStore(state => state.currentProfile);
   const { updateMastery, recordFactAttempt, saveQuiz, updateDailyStreak } = useProgressStore();
+  const { play } = useAudio();
+  const { speak } = useTextToSpeech();
 
-  const [problems, setProblems] = useState<QuizProblem[]>([]);
+  const [problems, setProblems] = useState<MathProblem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
@@ -73,21 +37,31 @@ export function Quiz() {
 
   const inputMethod = currentProfile?.inputMethod || 'multiple-choice';
 
+  // Get enabled operations and difficulty from profile (with defaults for backwards compatibility)
+  const enabledOperations: OperationType[] = currentProfile?.enabledOperations || ['multiplication'];
+  const difficultyLevel: DifficultyLevel = currentProfile?.difficultyLevel || 'medium';
+
   useEffect(() => {
     if (!currentProfile) {
       navigate('/profiles', { replace: true });
       return;
     }
-    const generatedProblems = generateProblems(tableNumber);
+    // Generate problems using the profile's enabled operations and difficulty
+    const generatedProblems = generateMathProblems(QUIZ_SIZE, enabledOperations, difficultyLevel);
     setProblems(generatedProblems);
-  }, [currentProfile, tableNumber, navigate]);
+  }, [currentProfile, tableNumber, navigate, enabledOperations.join(','), difficultyLevel]);
 
   useEffect(() => {
     // Generate choices for multiple choice mode
     if (problems[currentIndex]) {
-      const correct = problems[currentIndex].correctAnswer;
-      const wrongs = generateWrongAnswers(correct);
-      const allChoices = [correct, ...wrongs].sort(() => Math.random() - 0.5);
+      const problem = problems[currentIndex];
+      const wrongs = generateMathWrongAnswers(
+        problem.correctAnswer,
+        problem.operation,
+        problem.operand1,
+        problem.operand2
+      );
+      const allChoices = [problem.correctAnswer, ...wrongs].sort(() => Math.random() - 0.5);
       setChoices(allChoices);
     }
     setProblemStartTime(Date.now());
@@ -110,12 +84,23 @@ export function Quiz() {
     };
     setProblems(updatedProblems);
 
-    // Record fact attempt
-    const fact = `${problem.multiplicand}x${problem.multiplier}`;
+    // Record fact attempt with operation type
+    const operationSymbol = problem.operation === 'multiplication' ? 'x' :
+                          problem.operation === 'division' ? '÷' :
+                          problem.operation === 'addition' ? '+' : '-';
+    const fact = `${problem.operand1}${operationSymbol}${problem.operand2}`;
     recordFactAttempt(currentProfile!.id, fact, correct);
 
     setIsCorrect(correct);
     setShowFeedback(true);
+
+    // Play sound effect
+    play(correct ? 'correct' : 'incorrect');
+
+    // Speak the correct answer if wrong
+    if (!correct) {
+      speak(`The answer is ${problem.correctAnswer}`);
+    }
 
     // Move to next problem or finish
     setTimeout(() => {
@@ -129,11 +114,21 @@ export function Quiz() {
         finishQuiz(updatedProblems);
       }
     }, correct ? 1000 : 2000);
-  }, [currentIndex, problems, problemStartTime, currentProfile, recordFactAttempt, showFeedback]);
+  }, [currentIndex, problems, problemStartTime, currentProfile, recordFactAttempt, showFeedback, play]);
 
-  const finishQuiz = async (finalProblems: QuizProblem[]) => {
+  const finishQuiz = async (finalProblems: MathProblem[]) => {
     const correctCount = finalProblems.filter(p => p.isCorrect).length;
     const score = Math.round((correctCount / finalProblems.length) * 100);
+
+    // Convert MathProblems to QuizProblems for storage compatibility
+    const quizProblems: QuizProblem[] = finalProblems.map(p => ({
+      multiplicand: p.operand1,
+      multiplier: p.operand2,
+      correctAnswer: p.correctAnswer,
+      userAnswer: p.userAnswer,
+      isCorrect: p.isCorrect,
+      timeToAnswerMs: p.timeToAnswerMs,
+    }));
 
     // Save quiz attempt
     const attempt: QuizAttempt = {
@@ -144,12 +139,14 @@ export function Quiz() {
       totalProblems: finalProblems.length,
       correctAnswers: correctCount,
       timeSpentSeconds: Math.round((Date.now() - startTime.getTime()) / 1000),
-      problems: finalProblems,
+      problems: quizProblems,
     };
     await saveQuiz(attempt);
 
-    // Update mastery
-    await updateMastery(currentProfile!.id, tableNumber, score);
+    // Update mastery (for multiplication tables journey)
+    if (enabledOperations.includes('multiplication')) {
+      await updateMastery(currentProfile!.id, tableNumber, score);
+    }
 
     // Update streak
     await updateDailyStreak(currentProfile!.id);
@@ -199,7 +196,7 @@ export function Quiz() {
           >
             {/* The problem */}
             <div className="text-6xl font-bold text-white text-center">
-              {currentProblem.multiplicand} × {currentProblem.multiplier}
+              {currentProblem.operand1} {getOperationSymbol(currentProblem.operation)} {currentProblem.operand2}
             </div>
 
             {/* Feedback overlay */}

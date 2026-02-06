@@ -7,7 +7,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 
 export function ParentSettings() {
   const navigate = useNavigate();
-  const { settings, isPinVerified, loadSettings, updatePin, toggleSound } = useSettingsStore();
+  const { settings, isPinVerified, loadSettings, updatePin, toggleSound, toggleReadAloud } = useSettingsStore();
 
   const [showPinChange, setShowPinChange] = useState(false);
   const [newPin, setNewPin] = useState(['', '', '', '']);
@@ -215,6 +215,33 @@ export function ParentSettings() {
                 <motion.div
                   className="w-6 h-6 bg-white rounded-full shadow-md"
                   animate={{ x: settings.soundEnabled ? 28 : 4 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="p-4 rounded-2xl bg-white/5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Read Aloud</p>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Read instructions aloud for younger children
+                </p>
+              </div>
+              <button
+                onClick={toggleReadAloud}
+                className={`w-14 h-8 rounded-full transition-colors ${
+                  settings.readAloudEnabled ? 'bg-[var(--color-primary)]' : 'bg-white/20'
+                }`}
+              >
+                <motion.div
+                  className="w-6 h-6 bg-white rounded-full shadow-md"
+                  animate={{ x: settings.readAloudEnabled ? 28 : 4 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               </button>

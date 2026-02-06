@@ -40,6 +40,30 @@ class GalaxyDatabase extends Dexie {
       settings: '++id',
       assessments: 'profileId',
     });
+
+    // Version 3: Add enabledOperations and difficultyLevel to profiles
+    this.version(3).stores({
+      profiles: 'id, name, createdAt, lastActiveAt',
+      tableProgress: '[profileId+tableNumber], profileId, status',
+      factStats: '[profileId+fact], profileId, nextReviewDate',
+      quizAttempts: 'id, profileId, tableNumber, date',
+      sessions: 'id, profileId, startTime',
+      streaks: 'profileId',
+      unlockedCharacters: '[profileId+characterId], profileId',
+      starBalances: 'profileId',
+      settings: '++id',
+      assessments: 'profileId',
+    }).upgrade(tx => {
+      // Migrate existing profiles to have default operation settings
+      return tx.table('profiles').toCollection().modify(profile => {
+        if (!profile.enabledOperations) {
+          profile.enabledOperations = ['multiplication'];
+        }
+        if (!profile.difficultyLevel) {
+          profile.difficultyLevel = 'medium';
+        }
+      });
+    });
   }
 }
 
@@ -188,7 +212,10 @@ export async function getSettings(): Promise<AppSettings | undefined> {
 export async function updateSettings(settings: AppSettings): Promise<void> {
   const existing = await db.settings.toArray();
   if (existing.length > 0) {
-    await db.settings.update(existing[0].parentPin, settings);
+    // Clear all existing settings and add the new one
+    // This ensures we always have exactly one settings record
+    await db.settings.clear();
+    await db.settings.add(settings);
   } else {
     await db.settings.add(settings);
   }
@@ -218,7 +245,11 @@ export async function initializeSettings(): Promise<void> {
         parentPin: '1234', // Default PIN
         breakReminderMinutes: 20,
         soundEnabled: true,
+        readAloudEnabled: true, // Default to on for younger kids
       });
+    } else if (settings.readAloudEnabled === undefined) {
+      // Migration: add readAloudEnabled to existing settings
+      await updateSettings({ ...settings, readAloudEnabled: true });
     }
   } catch (error) {
     console.error('initializeSettings error:', error);

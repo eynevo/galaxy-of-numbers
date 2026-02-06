@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer, PageContent } from '../components/common/PageContainer';
@@ -7,21 +7,37 @@ import { Avatar } from '../components/common/Avatar';
 import { StarDisplay } from '../components/common/StarDisplay';
 import { useProfileStore } from '../stores/profileStore';
 import { useProgressStore } from '../stores/progressStore';
+import { getAssessmentResult } from '../db/database';
 
 export function MainMenu() {
   const navigate = useNavigate();
   const currentProfile = useProfileStore(state => state.currentProfile);
   const { starBalance, streak, loadProgress } = useProgressStore();
+  const [isCheckingAssessment, setIsCheckingAssessment] = useState(true);
 
   useEffect(() => {
     if (!currentProfile) {
       navigate('/profiles', { replace: true });
       return;
     }
-    loadProgress(currentProfile.id);
+
+    // Check if assessment has been completed
+    const checkAssessment = async () => {
+      const assessment = await getAssessmentResult(currentProfile.id);
+      if (!assessment) {
+        // No assessment yet, redirect to assessment
+        navigate('/assessment', { replace: true });
+        return;
+      }
+      // Assessment complete, load progress
+      await loadProgress(currentProfile.id);
+      setIsCheckingAssessment(false);
+    };
+
+    checkAssessment();
   }, [currentProfile, navigate, loadProgress]);
 
-  if (!currentProfile) return null;
+  if (!currentProfile || isCheckingAssessment) return null;
 
   const menuItems = [
     {
@@ -39,6 +55,14 @@ export function MainMenu() {
       emoji: '🎯',
       color: 'from-blue-500 to-cyan-500',
       path: '/practice',
+    },
+    {
+      id: 'challenge',
+      title: 'Challenge',
+      subtitle: '60 second speed test!',
+      emoji: '⚡',
+      color: 'from-red-500 to-orange-500',
+      path: '/challenge',
     },
     {
       id: 'collection',

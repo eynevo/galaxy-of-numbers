@@ -28,9 +28,19 @@ export function PinEntry() {
       case 'create-profile':
         navigate('/create-profile', { replace: true });
         break;
+      case 'settings':
+        navigate('/parent/settings', { replace: true });
+        break;
       case 'dashboard':
-      default:
         navigate('/parent/dashboard', { replace: true });
+        break;
+      default:
+        // Handle dynamic paths like 'child/{id}'
+        if (redirect.startsWith('child/')) {
+          navigate(`/parent/${redirect}`, { replace: true });
+        } else {
+          navigate('/parent/dashboard', { replace: true });
+        }
         break;
     }
   };

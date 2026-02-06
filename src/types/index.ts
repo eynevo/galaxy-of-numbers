@@ -2,6 +2,10 @@
 export type Theme = 'sparkle' | 'lego';
 export type InputMethod = 'multiple-choice' | 'number-pad';
 
+// Math operation types
+export type OperationType = 'addition' | 'subtraction' | 'multiplication' | 'division';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+
 // Profile types
 export interface Profile {
   id: string;
@@ -9,6 +13,8 @@ export interface Profile {
   theme: Theme;
   avatarId: string;
   inputMethod: InputMethod;
+  enabledOperations: OperationType[];
+  difficultyLevel: DifficultyLevel;
   createdAt: Date;
   lastActiveAt: Date;
 }
@@ -51,6 +57,17 @@ export interface QuizAttempt {
 export interface QuizProblem {
   multiplicand: number;
   multiplier: number;
+  correctAnswer: number;
+  userAnswer: number | null;
+  isCorrect: boolean;
+  timeToAnswerMs: number;
+}
+
+// Generic math problem for all operation types
+export interface MathProblem {
+  operand1: number;
+  operand2: number;
+  operation: OperationType;
   correctAnswer: number;
   userAnswer: number | null;
   isCorrect: boolean;
@@ -110,6 +127,7 @@ export interface AppSettings {
   parentPin: string;
   breakReminderMinutes: number;
   soundEnabled: boolean;
+  readAloudEnabled: boolean;
 }
 
 // Teaching content types

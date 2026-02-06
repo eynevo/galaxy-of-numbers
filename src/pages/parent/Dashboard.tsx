@@ -84,7 +84,7 @@ export function ParentDashboard() {
   return (
     <PageContainer showStars={false}>
       <PageHeader title="Parent Dashboard" onBack={handleBack} />
-      <PageContent className="gap-6">
+      <PageContent className="gap-6 overflow-y-auto">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-[var(--color-text-secondary)]">Loading...</div>

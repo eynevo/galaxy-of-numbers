@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Profile, Theme, InputMethod } from '../types';
+import type { Profile, Theme, InputMethod, OperationType, DifficultyLevel } from '../types';
 import {
   getAllProfiles,
   createProfile,
@@ -64,6 +64,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       theme,
       avatarId,
       inputMethod,
+      enabledOperations: ['multiplication'] as OperationType[],
+      difficultyLevel: 'medium' as DifficultyLevel,
       createdAt: now,
       lastActiveAt: now,
     };

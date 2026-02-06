@@ -29,12 +29,28 @@ interface ProgressState {
   unlockNextTable: (profileId: string) => Promise<void>;
   recordFactAttempt: (profileId: string, fact: string, isCorrect: boolean) => Promise<void>;
   addStars: (profileId: string, amount: number) => Promise<void>;
-  updateDailyStreak: (profileId: string) => Promise<void>;
+  updateDailyStreak: (profileId: string) => Promise<StreakMilestoneReached | null>;
   saveQuiz: (attempt: QuizAttempt) => Promise<void>;
+  lastMilestoneReached: StreakMilestoneReached | null;
+  clearMilestone: () => void;
 }
 
 // Table unlock order
 const UNLOCK_ORDER = [1, 10, 2, 5, 3, 4, 9, 6, 7, 8];
+
+// Streak milestones and their star bonuses
+export const STREAK_MILESTONES = [
+  { days: 3, bonus: 10, message: '3 Day Streak!' },
+  { days: 7, bonus: 25, message: 'Week Warrior!' },
+  { days: 14, bonus: 50, message: '2 Week Champion!' },
+  { days: 30, bonus: 100, message: 'Monthly Master!' },
+] as const;
+
+export interface StreakMilestoneReached {
+  days: number;
+  bonus: number;
+  message: string;
+}
 
 export const useProgressStore = create<ProgressState>((set, get) => ({
   tableProgress: [],
@@ -43,6 +59,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   starBalance: null,
   recentQuizzes: [],
   isLoading: false,
+  lastMilestoneReached: null,
 
   loadProgress: async (profileId: string) => {
     set({ isLoading: true });
@@ -222,18 +239,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     }
   },
 
-  updateDailyStreak: async (_profileId: string) => {
+  updateDailyStreak: async (profileId: string): Promise<StreakMilestoneReached | null> => {
     const { streak } = get();
     const today = new Date().toISOString().split('T')[0];
 
-    if (!streak) return;
+    if (!streak) return null;
 
     if (streak.lastPracticeDate === today) {
       // Already practiced today
-      return;
+      return null;
     }
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const previousStreak = streak.currentStreak;
 
     let newStreak: Streak;
     if (streak.lastPracticeDate === yesterday) {
@@ -255,6 +273,25 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
     await updateStreak(newStreak);
     set({ streak: newStreak });
+
+    // Check if a milestone was reached
+    let milestoneReached: StreakMilestoneReached | null = null;
+    for (const milestone of STREAK_MILESTONES) {
+      // Milestone is reached if we just crossed the threshold
+      if (newStreak.currentStreak >= milestone.days && previousStreak < milestone.days) {
+        milestoneReached = { ...milestone };
+        // Award bonus stars
+        await get().addStars(profileId, milestone.bonus);
+        set({ lastMilestoneReached: milestoneReached });
+        break;
+      }
+    }
+
+    return milestoneReached;
+  },
+
+  clearMilestone: () => {
+    set({ lastMilestoneReached: null });
   },
 
   saveQuiz: async (attempt: QuizAttempt) => {
